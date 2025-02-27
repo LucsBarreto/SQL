@@ -1,0 +1,13 @@
+use parks_and_recreation;
+
+CREATE TEMPORARY TABLE salario_50k
+SELECT
+  *
+FROM employee_salary
+WHERE salary >= 50000;
+
+SELECT
+  *
+FROM salario_50k;
+
+DROP TEMPORARY TABLE salario_50k;
