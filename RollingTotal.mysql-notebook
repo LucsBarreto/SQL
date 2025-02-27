@@ -1,0 +1,10 @@
+use parks_and_recreation;
+
+SELECT
+CONCAT(primeiro_nome,' ', ultimo_nome) nome_completo,
+genero,
+salario,
+SUM(salario) OVER(PARTITION BY genero ORDER BY dem_id_func) rolling_total
+FROM all_data
+;
+
