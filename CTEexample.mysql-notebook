@@ -1,0 +1,16 @@
+use parks_and_recreation;
+#CTE looks like a subquery but you cant use it mutiple times
+
+WITH CTE_example AS (
+  SELECT
+  genero,
+  AVG(salario) avg_sal,
+  MAX(salario) max_sal,
+  MIN(salario) min_sal,
+  COUNT(salario) count_sal
+  FROM all_data
+  GROUP BY genero;
+  )
+
+  SELECT * FROM CTE_example;
+  
