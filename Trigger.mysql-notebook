@@ -1,0 +1,22 @@
+use parks_and_recreation;
+#trigger
+
+DELIMITER $$ # changing the delimiter to be more especific about where i want this query to end
+CREATE TRIGGER employee_insert
+  AFTER INSERT ON employee_salary
+  FOR EACH ROW
+BEGIN
+  INSERT INTO employee_demographics (employee_id, first_name< last_name)
+  VALUES (new.employee_id, new.first_name, new.last_name);
+END $$
+DELIMITER ;
+
+SELECT * FROM employee_demographics;
+SELECT * FROM employee_salary;
+
+INSERT INTO employee_salary (employee_id,first_name,last_name,occupation,salary,dept_id)
+VALUES (15,'lucas','barreto','student',100,1);
+
+SELECT * FROM employee_demographics;
+SELECT * FROM employee_salary;
+#compare both tables
