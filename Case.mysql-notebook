@@ -1,0 +1,30 @@
+#calculate some payroll changes, like increases and bonus for who works ate finance dp
+use parks_and_recreation;
+SELECT
+dem_id_func id_func, #easier name in portuguese btw, like 'id_empl' for yall
+CONCAT(primeiro_nome, ' ', ultimo_nome) nome_completo, #concatenating both first and last name to create the whole name
+idade, 
+genero,
+cargo,
+salario,
+CASE
+    WHEN salario < 50000 THEN salario * .05
+    WHEN salario >= 50000 THEN salario * .07
+END valor_aumento, #case to calculate the increased value
+CASE
+    WHEN salario < 50000 THEN salario * 1.05
+    WHEN salario >= 50000 THEN salario * 1.07
+END novo_salario, #case to calculate the new salary
+COALESCE(CASE
+    WHEN nome_departamento LIKE 'finance' THEN salario * .10    
+END, 0) bonus, #case to see if the employee works at finance department
+SUM(COALESCE(CASE
+    WHEN salario < 50000 THEN salario * 1.05
+    WHEN salario >= 50000 THEN salario * 1.07
+END, salario) + COALESCE(CASE
+    WHEN nome_departamento LIKE 'finance' THEN salario * .10    
+END, 0)) folha_pagamento, #sum of this 2 cases, just to calculate how much the emplyee will earn
+id_departamento,
+nome_departamento
+FROM all_data #view with all data
+GROUP BY id_func,nome_completo,idade,genero,cargo,salario,id_departamento,nome_departamento;
