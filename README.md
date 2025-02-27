@@ -1,2 +1,2 @@
 # SQL
-some SQL queries
+learning SQL
