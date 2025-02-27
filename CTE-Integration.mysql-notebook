@@ -1,0 +1,25 @@
+use parks_and_recreation;
+
+WITH CTE_a AS (
+  SELECT
+  employee_id,
+  gender,
+  birth_date
+  FROM employee_demographics
+  WHERE birth_date > '1985-01-01'
+),
+CTE_b AS (
+  SELECT
+  employee_id,
+  salary
+  FROM employee_salary
+  WHERE salary > 50000
+)
+SELECT
+ctea.emplyee_id,
+gender,
+birth_date,
+salary
+FROM CTE_a ctea
+JOIN CTE_b cteb
+  ON ctea.employee_id = cteb.employee_id;
