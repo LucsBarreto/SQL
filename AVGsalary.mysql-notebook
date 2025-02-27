@@ -1,0 +1,17 @@
+use parks_and_recreation;
+SELECT * FROM all_data; #reference view
+
+SELECT 
+dem_id_func id_func,
+CONCAT(primeiro_nome,' ', ultimo_nome) nome,
+idade,
+genero,
+cargo,
+salario,
+AVG(salario) OVER (PARTITION BY genero) media_salarial_genero, #calculating the average salary, separating by gender
+COALESCE((SELECT AVG(salary) FROM employee_salary), 0) media_salarial_total, #calculating the avg  of all salaries using this subquery 
+id_departamento,
+nome_departamento
+FROM all_data
+GROUP BY id_func,nome,idade,genero,cargo,salario,id_departamento,nome_departamento
+;
