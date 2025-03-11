@@ -1,0 +1,185 @@
+USE worlds_layoffs;
+-- 4 steps:
+-- remove any duplicates
+-- standardize data, with trim and normal caracters
+-- null or empty values
+-- remove any columns or rows
+
+-- step 1: duplicates
+
+SELECT *,
+    ROW_NUMBER() OVER (
+        PARTITION BY company, location, industry, total_laid_off, percentage_laid_off, `date`, stage, country, funds_raised_millions 
+    ) row_num
+    FROM layoffs_staging;
+# row counter to see if theres any duplicated value
+
+WITH cte_duplicates AS (
+    SELECT *,
+    ROW_NUMBER() OVER (
+        PARTITION BY company, location, industry, total_laid_off, percentage_laid_off, `date`, stage, country, funds_raised_millions 
+    ) row_num
+    FROM layoffs_staging
+    )
+    SELECT * FROM cte_duplicates
+    WHERE row_num > 1;
+# cte to see those rows that are duplicated
+
+CREATE TABLE `layoffs_staging2` (
+  `company` text,
+  `location` text,
+  `industry` text,
+  `total_laid_off` int DEFAULT NULL,
+  `percentage_laid_off` text,
+  `date` text,
+  `stage` text,
+  `country` text,
+  `funds_raised_millions` int DEFAULT NULL,
+  `row_num` INT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+# creating a new table with the row_num columns
+
+INSERT layoffs_staging2
+    SELECT *,
+    ROW_NUMBER() OVER (
+        PARTITION BY company, location, industry, total_laid_off, percentage_laid_off, `date`, stage, country, funds_raised_millions 
+    ) row_num
+    FROM layoffs_staging;
+# inserting all data and the row number column
+
+DELETE FROM layoffs_staging2
+    WHERE row_num > 1;
+#removing duplicates
+
+-- step 2: standardizing data
+
+UPDATE layoffs_staging2
+    SET
+        company = TRIM(company),
+        location = TRIM(location),
+        industry = TRIM(industry),
+        total_laid_off = TRIM(total_laid_off),
+        percentage_laid_off = TRIM(percentage_laid_off),
+        `date` = TRIM(`date`),
+        stage = TRIM(stage),
+        country = TRIM(country),
+        funds_raised_millions = TRIM(funds_raised_millions);
+
+# update to remove any empty space at the end and at the begging of each column
+
+SELECT * FROM layoffs_staging2;
+SELECT DISTINCT country FROM layoffs_staging2
+ORDER BY country ASC;
+# creating queries to see all distinct values and check if theres any error
+
+UPDATE layoffs_staging2
+    SET
+        location = 'Dusseldorf'
+        WHERE location LIKE 'DÃ¼sseldorf'; 
+UPDATE layoffs_staging2    
+    SET    
+        location = 'Florianopolis'
+        WHERE location LIKE 'FlorianÃ³polis';
+UPDATE layoffs_staging2         
+    SET    
+        location = 'Malmo'
+        WHERE location LIKE 'MalmÃ¶';
+
+-- location changes : 'DÃ¼sseldorf' to 'Dusseldorf' change / 'FlorianÃ³polis' to `Florianopolis` change/ 'MalmÃ¶' to 'Malmo' change
+
+UPDATE layoffs_staging2
+    SET
+        industry = 'Crypto'
+        WHERE industry LIKE 'Crypto%';
+
+-- industry changes : theres 3 diferents variations of 'crypto' industry: crypto, crypto currency and cryptocurrency. so i standardized all of them to just 'crypto'
+
+SELECT `date`,
+    STR_TO_DATE(date, '%m-%d-%Y')
+    FROM layoffs_staging2;
+
+UPDATE layoffs_staging2
+    SET
+        `date` = STR_TO_DATE(date, '%m-%d-%Y');
+
+ALTER TABLE layoffs_staging2
+    MODIFY COLUMN `date` DATE;
+
+-- date changes : the columns 'date' had integer type, so to be more organized, so i changed to date type
+
+UPDATE layoffs_staging2
+    SET
+        country = 'United States'
+        WHERE country LIKE 'United States%';
+-- contry changes : theres only one diference in this column, 'united states' and 'united states.'
+
+-- step 3 : null or empty values
+
+SELECT * FROM layoffs_staging2
+WHERE industry IS NULL OR industry = ''; 
+# seeing if theres any null or empty values in all columns
+
+SELECT 
+    t1.company t1_company,
+    t2.company t2_company,
+    t1.location t1_location,
+    t2.location t2_location,
+    t1.industry t1_industry,
+    t2.industry t2_industry,
+    t1.stage t1_stage,
+    t2.stage t2_stage,
+    t1.country t1_country,
+    t2.country t2_country
+    FROM layoffs_staging2 t1
+    JOIN layoffs_staging2 t2
+        ON t1.company = t2.company
+    WHERE 
+    (t1.industry IS NULL OR t1.industry = '') 
+    AND 
+    (t2.industry IS NOT NULL AND t2.industry != '')
+    AND 
+    (t1.location = t2.location);
+#creating a join to match those companies with null values at industry
+
+UPDATE layoffs_staging2 t1
+    JOIN layoffs_staging2 t2
+    ON t1.company = t2.company
+    SET t1.industry = t2.industry
+    WHERE
+    (t1.industry IS NULL OR t1.industry = '') 
+    AND 
+    (t2.industry IS NOT NULL AND t2.industry != '')
+    AND 
+    (t1.location = t2.location);
+#updating thoses companies equaling values with same company and location names
+
+SELECT * 
+    FROM layoffs_staging2 
+    WHERE 
+    (total_laid_off is NULL OR total_laid_off = '') 
+    AND 
+    (percentage_laid_off IS NULL OR percentage_laid_off = '')
+    ;
+#checking if theres any rows with empty or null values in thoses columns
+
+DELETE FROM layoffs_staging2
+    WHERE 
+    (total_laid_off is NULL OR total_laid_off = '') 
+    AND 
+    (percentage_laid_off IS NULL OR percentage_laid_off = '')
+    ;
+# deleting thoses rows
+
+ALTER TABLE layoffs_staging2
+    DROP COLUMN row_num;
+# dropping row_num column because i no longer need it
+
+
+
+
+
+
+
+
+
+
